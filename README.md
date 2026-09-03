@@ -1,2 +1,25 @@
-# HaiTongQRCode
-This is a project that allows people upload doc and scan qrcode to view info 
+# HaiTongQRcode
+
+招标文件与合同二维码登记、核验和追溯系统。
+
+## 当前状态
+
+项目处于 P0（需求与工程决策冻结）阶段，尚未开始功能开发。
+
+## 核心流程
+
+```text
+后台登记招标文件或合同 -> 发布 -> 生成二维码 -> 公众扫码 -> 核验最新状态与公开信息
+```
+
+系统提供企业登记信息核验，不替代电子签章、CA 认证或司法意义上的原件鉴定。
+
+## 文档
+
+- [开发基线文档](docs/开发基线文档.md)
+- [ADR 模板](docs/adr/0000-template.md)
+
+## 开发约定
+
+每个开发任务开始前从 `main` 拉取最新代码，使用独立分支完成，并通过一个 Pull Request 交付。PR 必须列出完成内容、测试结果、迁移影响、风险和已知限制。
+

@@ -1,0 +1,26 @@
+# dependencies
+node_modules/
+.pnpm-store/
+
+# build and test outputs
+.next/
+dist/
+coverage/
+playwright-report/
+test-results/
+.turbo/
+
+# environment and secrets
+.env
+.env.*
+!.env.example
+
+# logs
+*.log
+
+# editors and OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
