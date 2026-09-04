@@ -22,7 +22,8 @@ jobs:
         shell: bash
         run: |
           unzip -oq HaiTongQRcode-source.zip -d .
-          rm -f HaiTongQRcode-source.zip .github/workflows/import-source.yml
+          rm -f HaiTongQRcode-source.zip
+          rm -f .github/workflows/ci.yml .github/workflows/dependency-review.yml .github/dependabot.yml
 
       - name: Commit completed product
         shell: bash
