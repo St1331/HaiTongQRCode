@@ -1,36 +1,91 @@
-name: Normalize imported documentation
+name: CI
 
 on:
+  pull_request:
   push:
     branches:
-      - feat/P1-T1-monorepo-bootstrap
+      - main
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  normalize-documentation:
-    if: github.actor != 'github-actions[bot]'
+  quality:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: haitong_qrcode_test
+          POSTGRES_USER: haitong
+          POSTGRES_PASSWORD: ci-only-password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U haitong -d haitong_qrcode_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    env:
+      DATABASE_URL: postgresql://haitong:ci-only-password@localhost:5432/haitong_qrcode_test
+      TEST_DATABASE_URL: postgresql://haitong:ci-only-password@localhost:5432/haitong_qrcode_test
+      SESSION_HMAC_SECRET: ci-session-secret-at-least-32-characters
+      IP_HMAC_SECRET: ci-ip-secret-at-least-32-characters-now
+    timeout-minutes: 15
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
         with:
-          ref: feat/P1-T1-monorepo-bootstrap
+          version: 10.14.0
 
-      - name: Normalize imported baseline filename
-        shell: bash
-        run: |
-          bad_file="$(find docs -maxdepth 1 -type f ! -name 'API.md' ! -name 'OPERATIONS.md' ! -name '开发基线文档.md' -print -quit)"
-          test -n "$bad_file"
-          cp "$bad_file" 'docs/开发基线文档.md'
-          git rm "$bad_file"
-          git add 'docs/开发基线文档.md'
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
 
-      - name: Commit normalized documentation
-        shell: bash
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Audit production dependencies
+        run: pnpm audit --prod --audit-level high --ignore-registry-errors
+
+      - name: Run quality gate
+        run: pnpm check
+
+      - name: Install browser for end-to-end tests
+        run: pnpm --filter @haitong/web exec playwright install --with-deps chromium
+
+      - name: Prepare end-to-end administrator
+        env:
+          ADMIN_USERNAME: e2e_admin
+          ADMIN_DISPLAY_NAME: 浏览器验收管理员
+          ADMIN_PASSWORD: E2e-admin-password-2026!
+        run: pnpm --filter @haitong/api db:seed-admin
+
+      - name: Run browser end-to-end test
+        env:
+          E2E_ADMIN_USERNAME: e2e_admin
+          E2E_ADMIN_PASSWORD: E2e-admin-password-2026!
+          PUBLIC_BASE_URL: http://127.0.0.1:3000
+          COOKIE_SECURE: 'false'
+          API_INTERNAL_URL: http://127.0.0.1:3001
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -m "fix: normalize development baseline filename"
-          git push origin HEAD:feat/P1-T1-monorepo-bootstrap
+          pnpm --filter @haitong/api start > api-e2e.log 2>&1 &
+          pnpm --filter @haitong/web start > web-e2e.log 2>&1 &
+          for attempt in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:3001/api/v1/ready >/dev/null && curl --fail --silent http://127.0.0.1:3000/login >/dev/null; then
+              break
+            fi
+            sleep 1
+          done
+          curl --fail http://127.0.0.1:3001/api/v1/ready
+          curl --fail http://127.0.0.1:3000/login
+          pnpm test:e2e
