@@ -1,0 +1,102 @@
+name: haitong-qrcode
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-haitong_qrcode}
+      POSTGRES_USER: ${POSTGRES_USER:-haitong}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}
+    ports:
+      - '${POSTGRES_PORT:-5432}:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        [
+          'CMD-SHELL',
+          'pg_isready -U ${POSTGRES_USER:-haitong} -d ${POSTGRES_DB:-haitong_qrcode}',
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  api:
+    build:
+      context: .
+      dockerfile: deploy/docker/Dockerfile.api
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      API_PORT: 3001
+      DATABASE_URL: postgresql://${POSTGRES_USER:-haitong}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-haitong_qrcode}
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-http://localhost:8080}
+      SESSION_HMAC_SECRET: ${SESSION_HMAC_SECRET:?SESSION_HMAC_SECRET must be set}
+      IP_HMAC_SECRET: ${IP_HMAC_SECRET:?IP_HMAC_SECRET must be set}
+      TRUST_PROXY_HOPS: 1
+      PUBLIC_IP_RATE_LIMIT: ${PUBLIC_IP_RATE_LIMIT:-6000}
+      PUBLIC_TOKEN_RATE_LIMIT: ${PUBLIC_TOKEN_RATE_LIMIT:-6000}
+      PUBLISH_CONTRACT_AMOUNT: ${PUBLISH_CONTRACT_AMOUNT:-false}
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+    command:
+      [
+        'sh',
+        '-c',
+        'pnpm --filter @haitong/api db:migrate:compiled && pnpm --filter @haitong/api start',
+      ]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://127.0.0.1:3001/api/v1/ready').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  web:
+    build:
+      context: .
+      dockerfile: deploy/docker/Dockerfile.web
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://127.0.0.1:3000/').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  nginx:
+    image: nginx:1.28-alpine
+    restart: unless-stopped
+    ports:
+      - '${HTTP_PORT:-8080}:80'
+    volumes:
+      - ./deploy/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      web:
+        condition: service_healthy
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD-SHELL', 'wget -q -O - http://127.0.0.1/ >/dev/null || exit 1']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  postgres_data:

@@ -1,7 +1,10 @@
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 
+import 'antd/dist/reset.css';
 import './globals.css';
+
+import { AppProviders } from '../components/app-providers';
 
 export const metadata: Metadata = {
   title: 'HaiTongQRcode',
@@ -13,7 +16,9 @@ export default function RootLayout({
 }: Readonly<{ children: ReactNode }>) {
   return (
     <html lang="zh-CN">
-      <body>{children}</body>
+      <body>
+        <AppProviders>{children}</AppProviders>
+      </body>
     </html>
   );
 }

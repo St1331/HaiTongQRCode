@@ -3,9 +3,11 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
+      "env": ["API_INTERNAL_URL", "NEXT_PUBLIC_API_BASE_URL"],
       "outputs": [".next/**", "!.next/cache/**", "dist/**"]
     },
     "dev": {
+      "dependsOn": ["^build"],
       "cache": false,
       "persistent": true
     },
@@ -18,6 +20,12 @@
     },
     "test": {
       "dependsOn": ["^build"],
+      "env": [
+        "DATABASE_URL",
+        "TEST_DATABASE_URL",
+        "SESSION_HMAC_SECRET",
+        "IP_HMAC_SECRET"
+      ],
       "outputs": []
     },
     "typecheck": {

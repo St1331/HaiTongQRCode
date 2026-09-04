@@ -6,7 +6,9 @@
     "build": "next build",
     "dev": "next dev",
     "lint": "eslint .",
-    "test": "vitest run --passWithNoTests",
+    "start": "next start -p 3000",
+    "test": "vitest run src --passWithNoTests",
+    "test:e2e": "playwright test",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -22,6 +24,7 @@
   "devDependencies": {
     "@haitong/eslint-config": "workspace:*",
     "@haitong/tsconfig": "workspace:*",
+    "@playwright/test": "^1.62.1",
     "@types/node": "26.4.1",
     "@types/react": "19.2.18",
     "@types/react-dom": "19.2.5",

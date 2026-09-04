@@ -1,6 +1,8 @@
 # dependencies
 node_modules/
 .pnpm-store/
+.codex-quarantine/
+.pg-test/
 
 # build and test outputs
 .next/
@@ -8,7 +10,10 @@ dist/
 coverage/
 playwright-report/
 test-results/
+playwright-report/
+test-results/
 .turbo/
+*.tsbuildinfo
 
 # environment and secrets
 .env
@@ -23,4 +28,3 @@ test-results/
 .vscode/
 .DS_Store
 Thumbs.db
-
