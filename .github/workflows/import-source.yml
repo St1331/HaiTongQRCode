@@ -1,0 +1,34 @@
+name: Import completed HaiTongQRcode source
+
+on:
+  push:
+    branches:
+      - feat/P1-T1-monorepo-bootstrap
+
+permissions:
+  contents: write
+
+jobs:
+  import-source:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out branch
+        uses: actions/checkout@v4
+        with:
+          ref: feat/P1-T1-monorepo-bootstrap
+
+      - name: Replace repository contents with completed source
+        shell: bash
+        run: |
+          unzip -oq HaiTongQRcode-source.zip -d .
+          rm -f HaiTongQRcode-source.zip .github/workflows/import-source.yml
+
+      - name: Commit completed product
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "feat: complete QR verification platform"
+          git push origin HEAD:feat/P1-T1-monorepo-bootstrap
