@@ -1,0 +1,9 @@
+.git
+.github
+.codex-quarantine
+**/.next
+**/dist
+**/node_modules
+coverage
+.env
+*.log
