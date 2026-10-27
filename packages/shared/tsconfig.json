@@ -1,0 +1,7 @@
+{
+  "extends": "@haitong/tsconfig/base.json",
+  "compilerOptions": {
+    "noEmit": true
+  },
+  "include": ["src/**/*.ts"]
+}

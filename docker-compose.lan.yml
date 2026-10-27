@@ -1,0 +1,7 @@
+# Explicit LAN development/testing overlay; never use for production deployment.
+# PUBLIC_BASE_URL must be the computer's LAN address reachable from the phone.
+services:
+  api:
+    environment:
+      NODE_ENV: development
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:?Set PUBLIC_BASE_URL to the LAN test URL}
