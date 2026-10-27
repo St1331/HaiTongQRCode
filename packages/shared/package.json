@@ -13,7 +13,7 @@
     "dist"
   ],
   "dependencies": {
-    "zod": "4.5.4"
+    "zod": "4.6.6"
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
